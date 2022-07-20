@@ -45,6 +45,42 @@ df = spark.read.format("avro").load("examples/src/main/resources/users.avro")
 df.select("name", "favorite_color").write.format("avro").save("namesAndFavColors.avro")
 ```
 
+Next the test data was loaded into Bigquery using the Dataproc connector found here: https://github.com/GoogleCloudDataproc/spark-bigquery-connector
+
+I was able to sucessfully deploy the Spark code in this project and load Avro files in GCS to Bigquery. Notice the _explode_ portion of ingestion.py. This functionality is usefull for un-nesting dataframes. The example data used in this exploration had nested fields causing single rows to exceed 100 MB in Bigquery. As mentioned previously, these rows cannot be queried. The un-nesting functionality was used to reduce row size.
+
+The following CLI can be used to create a Spark Cluster and deploy the code in this project.
+
+1. Create a Dataproc cluster with dependencies _(Avro and BQ)_:
+
+```bash
+gcloud dataproc clusters create <cluster name> \
+--enable-component-gateway \
+--region <region> \
+--zone <zone> \
+--master-machine-type n1-standard-4 \
+--master-boot-disk-type pd-ssd \
+--master-boot-disk-size 500 \
+--num-workers 2 \
+--worker-machine-type n1-standard-4 \
+--worker-boot-disk-type pd-ssd \
+--worker-boot-disk-size 500 \
+--image-version 2.0-debian10 \
+--scopes 'https://www.googleapis.com/auth/cloud-platform' \
+--metric-sources spark,yarn \
+--properties=^~^spark:spark.jars.packages=org.apache.spark:spark-avro_2.12:3.1.3,com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.24.2~dataproc:dataproc.logging.stackdriver.enable=true,dataproc.logging.stackdriver.job.yarn.container.enable=true \
+--project <project>
+```
+
+2. Submit Spark job
+
+```bash
+gcloud dataproc jobs submit pyspark \
+<.py gcs location> \
+--region=<region> \
+--cluster=<cluster name>-- --file_loc=<avro file gcs location> --dataset=< bq dataset name> --table=<bq table name> --temp_bucket=<gcs temp bucket> --temp_format=avro --explode_col=none
+```
+
 ---
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
