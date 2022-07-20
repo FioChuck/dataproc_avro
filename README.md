@@ -1,57 +1,42 @@
-dataproc_avro
-==============================
+# Avro Ingestion into Bigquery
 
-Discovery Work: Loading Avro files into BQ using Pyspark on Dataproc.
+Objective: Load large block Avro files into GCP Bigquery using Pyspark running on GCP Dataproc.
 
-Project Organization
-------------
+# Ingestion using Command-line Tooling
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+Avro files can typically be loaded into Bigquery using the `bq load` command-line tool with the `--source_format` flag set to _AVRO_. More information on this operation can be found here: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-avro#bq_1
 
+See example below:
 
---------
+```shell
+bq load \
+    --source_format=AVRO \
+    mydataset.mytable \
+    gs://mybucket/mydata.avro
+```
+
+Unfortunately a few limitations apply when using this toolset. These limitations are tabulated below. More info here: https://cloud.google.com/bigquery/quotas
+
+1. (`bq` command-line tool) Maximum size for file data blocks: 16 MB
+   > The size limit for Avro file data blocks is 16 MB.
+2. (`jobs.query` API) Maximum row size: 100 MB
+   > The maximum row size is approximate, because the limit is based on the internal representation of row data. The maximum row size limit is enforced during certain stages of query job execution.
+
+This means you cannot use the `bq load` command-line tool to load Avro data with a block size greater than 16 MB. The data must be manipulated prior to being loaded.
+
+# Ingestion using Spark
+
+Test files ingested into Spark dataframe using spark-avro dependency located here: https://mvnrepository.com/artifact/org.apache.spark/spark-avro
+
+spark-avro moducle is external, there is no .avro API in DataFrameReader or DataFrameWriter. The dependency must be added to cluster or loaded as package during spark-submit. For more see: https://spark.apache.org/docs/latest/sql-data-sources-avro.html
+
+Example:
+
+```python
+df = spark.read.format("avro").load("examples/src/main/resources/users.avro")
+df.select("name", "favorite_color").write.format("avro").save("namesAndFavColors.avro")
+```
+
+---
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
