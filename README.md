@@ -85,6 +85,24 @@ gcloud dataproc jobs submit pyspark \
 --cluster=<cluster name>-- --file_loc=<avro file gcs location> --dataset=< bq dataset name> --table=<bq table name> --temp_bucket=<gcs temp bucket> --temp_format=avro --explode_col=none
 ```
 
+## Known Error when writing Spark Dataframe arrays of structs to BigQuery.
+
+Data written to Biquery is first written to Google Cloud Service as an intermediate file. By defaul this intermediate file format is Parquet. Unfortunately when writing an array of structs with default settings the schema is corrupted. This is a know issue documented here: https://github.com/GoogleCloudDataproc/spark-bigquery-connector/issues/251
+
+To work around this the `intermediateFormat` flag should be set to _avro_.
+
+For example:
+
+```python
+df.write \
+.format("bigquery") \
+.option("table", "{}.{}".format(<dataset>, <table>)) \
+.option("temporaryGcsBucket", <bucket>) \
+.option("intermediateFormat", "avro") \
+.mode('overwrite') \
+.save()
+```
+
 ---
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
