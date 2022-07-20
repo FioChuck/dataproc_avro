@@ -28,7 +28,11 @@ In order to bypass these limitations, Spark and Dataproc was explored as an alte
 
 # Ingestion using Spark
 
-The Spark engine and BigQuery connector were also explored as an alternative for transforming and loading large Avro files.
+The Spark Engine and BigQuery connector were also explored as an alternative for transforming and loading large Avro files. The example code for this project is located in this folder:
+
+    ├── src                <- Source code for use in this project.
+    │   └── ingestion      <- Scripts to ingest and manipulate Avro files
+    │       └── ingestion.py
 
 Test files were ingested into a Spark dataframe using _spark-avro_ dependency located here: https://mvnrepository.com/artifact/org.apache.spark/spark-avro
 
