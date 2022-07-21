@@ -57,6 +57,8 @@ The following CLI can be used to create a Spark Cluster and deploy the code in t
 
 1. Create a Dataproc cluster with dependencies _(Avro and BQ)_:
 
+Notice packages are added for connecting to BigQuery and ingesting Avro files into Spark. Also, the Dataproc setting publishes Dataproc job driver output and Spark driver logs to logging.
+
 ```bash
 gcloud dataproc clusters create <cluster name> \
 --enable-component-gateway \
@@ -86,9 +88,9 @@ gcloud dataproc jobs submit pyspark \
 
 ## Known Error when writing Spark Dataframe arrays of structs to BigQuery.
 
-Data written to Biquery is first written to Google Cloud Service as an intermediate file. By defaul this intermediate file format is Parquet. Unfortunately when writing an array of structs with default settings the schema is corrupted. This is a know issue documented here: https://github.com/GoogleCloudDataproc/spark-bigquery-connector/issues/251
+Data written to Biquery is first written to Google Cloud Storage as an intermediate file. By defaul this intermediate file format is Parquet. Unfortunately when writing an array of structs with default settings the schema is corrupted. This is a know issue documented here: https://github.com/GoogleCloudDataproc/spark-bigquery-connector/issues/251
 
-To work around this the `intermediateFormat` flag should be set to _avro_.
+To work around this the `intermediateFormat` flag should be set to _avro_. Intermediate Avro files are still subject to the max block size of 16 MB. This limitation applies to the `jobs.insert` API method.
 
 For example:
 
@@ -98,6 +100,22 @@ df.write \
 .option("table", "{}.{}".format(<dataset>, <table>)) \
 .option("temporaryGcsBucket", <bucket>) \
 .option("intermediateFormat", "avro") \
+.mode('overwrite') \
+.save()
+```
+
+_Direct Mode_ is another option for loading Avro files with an array of structs. The Direct Mode option uses the BigQuery Storage Write API which is not subject to the same quotas as the BiqQuery API.
+
+Unforunatley the Direct Mode option does not support MapType data types. See issue here: https://github.com/GoogleCloudDataproc/spark-bigquery-connector/issues/522
+
+The example below shows how to enable Direct Mode.
+
+```python
+df.write \
+.format("bigquery") \
+.option("table", "{}.{}".format(<dataset>, <table>)) \
+.option("temporaryGcsBucket", <bucket>) \
+.option("writeMethod", "direct") \
 .mode('overwrite') \
 .save()
 ```
