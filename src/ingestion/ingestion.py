@@ -32,10 +32,13 @@ def main():
     df.write \
       .format("bigquery") \
       .option("table", "{}.{}".format(args.dataset, args.table)) \
-      .option("temporaryGcsBucket", args.temp_bucket) \
-      .option("intermediateFormat", args.temp_format) \
+      .option("writeMethod", "direct") \
       .mode('overwrite') \
       .save()
+
+    # removed indermediateFormat to test Direct Mode
+    #   .option("intermediateFormat", args.temp_format) \
+    #   .option("temporaryGcsBucket", args.temp_bucket) \
 
 
 if __name__ == '__main__':
