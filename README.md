@@ -72,8 +72,7 @@ gcloud dataproc clusters create <cluster name> \
 --image-version 2.0-debian10 \
 --scopes 'https://www.googleapis.com/auth/cloud-platform' \
 --metric-sources spark,yarn \
---properties=^~^spark:spark.jars.packages=org.apache.spark:spark-avro_2.12:3.1.3,com.google.cloud.spark:spark-BigQuery-with-dependencies_2.12:0.24.2~dataproc:dataproc.logging.stackdriver.enable=true,dataproc.logging.stackdriver.job.yarn.container.enable=true \
---project <project>
+--properties=^~^dataproc:dataproc.logging.stackdriver.enable=true~dataproc:dataproc.logging.stackdriver.job.yarn.container.enable=true~spark:spark.jars.packages=org.apache.spark:spark-avro_2.12:3.1.3,com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.24.2
 ```
 
 2. Submit Spark job
