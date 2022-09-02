@@ -24,18 +24,19 @@ def main():
 
     df = spark.read.format("avro").load(args.file_loc)
 
-    df.repartition(64)
+    # df.repartition(64)
 
     if args.explode_col != "none":
         df = df.select("*", F.explode(F.col(args.explode_col))) \
             .drop(args.explode_col) \
             .withColumnRenamed('col', args.explode_col)
 
-    print(df.count)
+    # print(df.count)
     df.printSchema()
 
     df.write \
       .format("bigquery") \
+      .option("enableListInference", "true")  \
       .option("table", "{}.{}".format(args.dataset, args.table)) \
       .option("intermediateFormat", args.temp_format) \
       .option("temporaryGcsBucket", args.temp_bucket) \
